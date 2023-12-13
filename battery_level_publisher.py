@@ -1,24 +1,27 @@
 #!/env/bin/env python3
 
-import rclpy 
+import rclpy
+import json
 from rclpy.node import Node
 from spot_msgs.msg import BatteryStateArray
 
-class BatteryLevelPublisherNode(Node):
+class BatteryLevelSubscriberNode(Node):
 
     def __init__(self):
-        super().__init__("Battery_Level")
-        self.battery_level_pub_ = self.create_publisher(BatteryStateArray, "/status/battery_states", 10)
-        self.timer = self.create_timer(1.0, self.get_battery_level)
-        self.get_logger().info("Battery level is being published")
+        super().__init__("battery_Level_subscriber")
+        self.battery_level_subscriber_ = self.create_subscription(
+            BatteryStateArray, "/status/battery_states", self.battery_states_callback, 10)
 
-        def get_battery_level(self):
-            msg = BatteryStateArray()
-            self.battery_level_pub_.publish(msg)
+    def battery_states_callback(self, msg: BatteryStateArray):
+        for battery_state in msg.battery_states:
+            battery_state_dict = {
+                'charge_percentage': battery_state.charge_percentage,
+            }
+        self.get_logger().info(json.dumps(battery_state_dict, indent = 2))
 
 def main(args=None):
     rclpy.init(args=args)
-    node = BatteryLevelPublisherNode()
+    node = BatteryLevelSubscriberNode()
     rclpy.spin(node)
     rclpy.shutdown()
 
