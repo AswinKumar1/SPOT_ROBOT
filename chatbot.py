@@ -60,37 +60,60 @@ def generate_and_play_audio(text):
 
         is_listening = False  # Stop listening while playing audio
         playsound.playsound(output_file_path, block=True)  # Simplified audio playback
+        #is_listening = True
     finally:
         is_listening = True  # Resume listening after audio playback
         os.remove(output_file_path)
 
-MAX_RESPONSE_LINES = 3
+OPT_RESPONSE_LINES = 3    # Optimal response lines. 
+MAX_RESPONSE_LINES = 6    # Maximum no. of lines in response.
 
-def get_confirmation(q, rec):
+def get_confirmation(q, rec):  
     check_response = "Do you want me to keep going?"
     generate_and_play_audio(f'<speak>{check_response}</speak>')
-    # Pass the recording queue into a function to see if the user wants to continue the prompt response with a YES or NO. 
-    response = recognize_speech(q, rec)  
-    return response.lower().startswith("y")
+    is_waiting_for_response = True 
+    # Pass the recording queue into a function to delay the response recognition period.  
+    while is_waiting_for_response:
+        print("Inside the waiting for response loop")
+        #generate_and_play_audio(f'<speak>{check_response}</speak>')
+        response = recognize_speech(q, rec)
+        if response is not None:
+            print("Inside the response is not none condition")
+            is_waiting_for_response = False 
+            return response
+            
 
-def recognize_speech(q, rec):
+def recognize_speech(q, rec):   # Checks if the User wants to continue the response with a yes or no/stop. 
     while True:
         try:
-            data = q.get()
+            data = q.get()  # Collect User's response
+        except queue.Empty:
+        # Handles the case where there's no data or queue being empty
+            print("No valid input received. Waiting for commands...")
+            continue
+        except Exception as e:
+            print(f"Error in recognize_speech: {e}")
+            continue
+        
+        try:
             if rec.AcceptWaveform(data):
                 result = rec.Result()
                 recognized_text = json.loads(result)["text"].strip().lower()
-
-                if recognized_text and recognized_text != "exit":
+                # Checks the response for a word starting with "Y" or stop words. 
+                if recognized_text.startswith("y") and recognized_text != "exit":
                     print("Recognized text:", recognized_text)
-                    return recognized_text
+                    return True
+                elif "no" in recognized_text or "stop" in recognized_text:
+                    return False
                 else:
                     print("No valid input. Waiting for commands...")
+                    return None
         except Exception as e:
-            print("Error in recognize_speech:", str(e))
+            print(f"Error processing recognized text: {e}")
+            continue
 
 
-def play_openai_output(user_question):
+def play_openai_output(rec, user_question):
     if user_question:
         # To remove HTML-like tags from the recognized text using regular expression
         cleaned_question = re.sub(r'<\s*speak\s*>\s*|\s*<\s*/\s*speak\s*>\s*', '', user_question, flags=re.IGNORECASE)
@@ -105,15 +128,14 @@ def play_openai_output(user_question):
         )
         openai_output = response['choices'][0]['message']['content']
         # Output only first 3 sentences of the responses. 
-        response_lines = openai_output.split('.')[:MAX_RESPONSE_LINES]
+        response_lines = openai_output.split('.')[:OPT_RESPONSE_LINES]
         limited_response = '\n'.join(response_lines)
         generate_and_play_audio(f'<speak>{limited_response}</speak>')
-        # If the response is beyond MAX_RESPONSE_LINES check with the user for continuation. 
+        # If the response is beyond OPT_RESPONSE_LINES check with the user for continuation. 
         if get_confirmation(q, rec):
-            new_response_lines = openai_output.split('\n')[MAX_RESPONSE_LINES:]
+            new_response_lines = openai_output.split('\n')[OPT_RESPONSE_LINES:MAX_RESPONSE_LINES]
             generate_and_play_audio(f'<speak>{new_response_lines}</speak>')
-        else:
-            sys.exit()
+        
 
     
 if __name__ == "__main__":
@@ -127,7 +149,14 @@ if __name__ == "__main__":
 
             rec = KaldiRecognizer(model, 16000)
             while True:
-                data = q.get()
+                try:
+                    # Set a timeout for the get operation
+                    data = q.get(timeout=5)  # Timeout is kept for 3 seconds for now. 
+                except queue.Empty:
+                    # Handles the case where there's no data within the timeout
+                    print("No valid input within the timeout. Waiting for commands...")
+                    continue
+
                 if rec.AcceptWaveform(data):
                     result = rec.Result()
                     try:
@@ -136,8 +165,14 @@ if __name__ == "__main__":
                         recognized_text = ""
 
                     if recognized_text.startswith(start_word.lower()) and recognized_text != "exit":
-                        print("Recognized text:", recognized_text)
-                        play_openai_output(recognized_text)
+                        if recognized_text[len(start_word):] == "":
+                            print("Inside wake_up_prompt loop")
+                            wake_up_prompt = "Hello, I'm here and ready to assist. Just say SPOT to start a conversation."
+                            generate_and_play_audio(f'<speak>{wake_up_prompt}</speak>')
+                        else:
+                            recognized_text = recognized_text[len(start_word):]
+                            print("Recognized text:", recognized_text)
+                            play_openai_output(rec, recognized_text)
                     else:
                         print("No valid input. Waiting for commands...")
 
@@ -145,3 +180,4 @@ if __name__ == "__main__":
         print("\nDone")
     except Exception as e:
         print(type(e).__name__ + ": " + str(e))
+
