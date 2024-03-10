@@ -20,4 +20,5 @@ cp install_isolated/share/cartographer_ros/configuration_files/backpack_2d.lua m
 
 ## Map that's build can be saved using the below commands in map folder.
 rosrun map_saver map_server -f name_for_the_map 
+
 This command creates name_for_the_map.pgm and name_for_the_map.yaml in the map folder.
