@@ -2,6 +2,8 @@
 
 Welcome to the SPOT_ROBOT_SCRIPTS repository! This repository hosts a collection of scripts developed for integrating Boston Dynamics SPOT robot with ROS Noetic and Python. 
 
+![Boston Dynamic SPOT](https://s3.amazonaws.com/assets.clearpathrobotics.com/wp-content/uploads/2020/09/08205431/SpotonRock-1.jpg)
+
 ## About
 
 The SPOT_ROBOT_SCRIPTS repository serves as a demonstration of my proficiency in robotics, particularly in working with Boston Dynamics SPOT robot. Leveraging ROS Noetic and Python, I've developed scripts aimed at enhancing SPOT's capabilities and integrating it into various robotic systems and environments as part of my work as Research Assistant. 
