@@ -31,18 +31,18 @@ This project demonstrates the integration of a Boston Dynamics Spot robot with a
 
 2. Install required Python packages:
 
-```sh
-pip install pyrealsense2 numpy opencv-python requests sounddevice vosk google-cloud-texttospeech gtts playsound
-```
+   ```sh
+pip install pyrealsense2 numpy opencv-python requests sounddevice vosk gtts playsound
+   ```
 
-3. Use Google Text-to-Speech module:
+3. Use Google Text-to-Speech module
 
 4. Build and run the Docker container for LLAVA:
 
-```sh
+   ```sh
 docker build -t spot-vlm .
 docker run -d -p 11434:11434 spot-vlm
-```
+   ```
 
 5. Start the main script:
 
