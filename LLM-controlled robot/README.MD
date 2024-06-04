@@ -28,7 +28,9 @@ This project demonstrates the integration of a Boston Dynamics Spot robot with a
    git clone https://github.com/yourusername/spot-ai-control.git
    cd spot-ai-control
   ```
+
 2. Install required Python packages:
+
 ```sh
 pip install pyrealsense2 numpy opencv-python requests sounddevice vosk google-cloud-texttospeech gtts playsound
 ```
