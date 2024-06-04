@@ -16,6 +16,7 @@ In the development of these projects, I've leveraged a range of skills, includin
 - **ROS Noetic**: ROS (Robot Operating System) Noetic is utilized for managing communication between different components of the robotic system.
 - **Cartographer**: Cartographer, a popular ROS package, is employed for simultaneous localization and mapping (SLAM) tasks, enabling SPOT to navigate and map its surroundings autonomously.
 - **NLP (Natural Language Processing)**: Natural Language Processing techniques are integrated to facilitate human-robot interaction and command interpretation.
+- **LLM (Large Language Model)**: LLMs are used as simple API ping/response or build from the scractch and also fine tuned versions of recently added models like Llama v1.6
 
 ## Projects
 
@@ -24,6 +25,7 @@ At present, this repository hosts foundational scripts and projects aimed at dem
 - **Basic Motion Control**: Implementing basic motion control scripts to maneuver SPOT within its environment.
 - **Mapping and Localization**: Integration of Google Cartographer for mapping and localization tasks, enabling SPOT to navigate autonomously.
 - **NLP Integration**: Incorporating NLP techniques to allow SPOT to interpret and respond to human commands more intelligently.
+- **LLM Integration**: Integrating with LLM models like Chatgpt, Llama and Llava for controlling and navigating the robot and creating a VQA chatbot over real-time voice commands. 
 
 ## Future Work
 
