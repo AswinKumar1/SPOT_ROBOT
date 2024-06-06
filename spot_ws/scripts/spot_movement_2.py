@@ -27,12 +27,22 @@ if __name__ == "__main__":
 
         # Define body control parameters (if needed)
         body_control_params = robot_command_pb2.BodyControlParams()
+        
+        # Define velocity limits
+        max_linear_velocity = geometry_pb2.Vec2(x=0.5, y=0.0)  # Max linear velocity in the x direction (0.5 m/s)
+        max_angular_velocity = 0.0
 
-        # Define mobility parameters
+        velocity_limit = geometry_pb2.SE2VelocityLimit(
+            linear=max_linear_velocity,
+            angular=max_angular_velocity
+        )
+
+        # Define mobility parameters with velocity limits
         mobility_params = robot_command_pb2.MobilityParams(
             body_control=body_control_params,
             obstacle_params=obstacle_params,
-            locomotion_hint=robot_command_pb2.HINT_AUTO
+            locomotion_hint=robot_command_pb2.HINT_AUTO,
+            vel_limit=velocity_limit
         )
 
         # Get the frame tree snapshot
