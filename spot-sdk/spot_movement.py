@@ -6,11 +6,16 @@ from bosdyn.api import geometry_pb2, basic_command_pb2
 from bosdyn.api.spot import robot_command_pb2
 from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
 import time
+import logging
+
+# For logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     try:
         sdk = bosdyn.client.create_standard_sdk('SpotClient')
-        robot = sdk.create_robot('192.168.1.10')
+        robot = sdk.create_robot('192.168.1.12')
         robot.authenticate('admin', 'Cards@2023spot')
         robot.time_sync.wait_for_sync()
 
@@ -25,16 +30,17 @@ if __name__ == "__main__":
             disable_vision_body_obstacle_avoidance=True
         )
 
-        # Define body control parameters (if needed)
+        # Define body control parameters
         body_control_params = robot_command_pb2.BodyControlParams()
         
         # Define velocity limits
-        max_linear_velocity = geometry_pb2.Vec2(x=0.5, y=0.0)  # Max linear velocity in the x direction (0.5 m/s)
-        max_angular_velocity = 0.0
+        max_linear_velocity = geometry_pb2.Vec2(x=0.5, y=0.0) 
+        max_angular_velocity = 0.0  
+        
+        max_se2_velocity = geometry_pb2.SE2Velocity(linear=max_linear_velocity, angular=max_angular_velocity)
 
         velocity_limit = geometry_pb2.SE2VelocityLimit(
-            linear=max_linear_velocity,
-            angular=max_angular_velocity
+            max_vel=max_se2_velocity
         )
 
         # Define mobility parameters with velocity limits
@@ -59,6 +65,7 @@ if __name__ == "__main__":
 
         # Send the command
         robot_command_client.robot_command(command, end_time_secs=time.time() + 5)
+        logger.info("Command sent successfully")
 
     except Exception as e:
-        print(f'{e}')
+        logger.error(f"Failed to execute command: {e}")
