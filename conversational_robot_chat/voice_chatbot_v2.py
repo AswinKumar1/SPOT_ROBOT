@@ -1,6 +1,6 @@
-import pyrealsense2 as rs
-import numpy as np
 import cv2
+import numpy as np
+import base64
 import os
 import threading
 import queue
@@ -9,8 +9,10 @@ import sounddevice as sd
 from vosk import Model, KaldiRecognizer
 import playsound
 from gtts import gTTS
-from gradio_client import Client
+from gradio_client import Client, file
 import json
+import time
+from datetime import datetime
 
 api_name = "/answer_question_1"
 
@@ -27,37 +29,27 @@ def callback(indata, frames, time, status):
         print(status, file=sys.stderr)
     q.put(bytes(indata))
 
-def get_frame_from_realsense():
-    # Configure depth and color streams
-    pipeline = rs.pipeline()
-    config = rs.config()
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+def get_frame_from_video_stream(url):
+    cap = cv2.VideoCapture(url)
+    if not cap.isOpened():
+        print(f"Error: Unable to open video stream {url}")
+        return None
 
-    # Start streaming
-    pipeline.start(config)
-
-    try:
-        # Wait for a coherent pair of frames: depth and color
-        frames = pipeline.wait_for_frames()
-        color_frame = frames.get_color_frame()
-        if not color_frame:
-            return None
-
-        # Convert images to numpy arrays
-        color_image = np.asanyarray(color_frame.get_data())
-        return color_image
-    finally:
-        # Stop streaming
-        pipeline.stop()
+    # Capture frame-by-frame
+    ret, frame = cap.read()
+    if not ret:
+        print("Error: Unable to read frame from video stream")
+        return None
+    
+    # Release the capture
+    cap.release()
+    return frame
 
 def save_image(image):
-    # Define the file path for saving the image
-    file_path = "temp.jpeg"
-
-    # Save the image
+    # Define the file path for saving the image with a timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_path = f"captured_frame_{timestamp}.jpeg"
     cv2.imwrite(file_path, image)
-
-    # Return the file path
     return file_path
 
 def call_gradio_api(image, prompt):
@@ -66,7 +58,7 @@ def call_gradio_api(image, prompt):
 
     # Send a request to the API using the `predict` method
     result = client.predict(
-        image,  # Image data
+        file(image),  # Image data
         prompt,  # Prompt text
         api_name=api_name  # Specify the API endpoint
     )
@@ -80,11 +72,11 @@ def extract_sentences(text, num_sentences=2):
 
 def generate_and_play_audio(text):
     output_file_path = 'output.mp3'
-    
+   
     try:
         tts = gTTS(text=text, lang='en')
         tts.save(output_file_path)
-        
+       
         play_thread = threading.Thread(target=playsound.playsound, args=(output_file_path,))
         play_thread.start()
         play_thread.join()
@@ -107,20 +99,20 @@ def main():
             data = q.get()
             if rec.AcceptWaveform(data):
                 result = rec.Result()
-                
+               
                 try:
                     recognized_text = json.loads(result)["text"].strip().lower()
                 except (json.JSONDecodeError, KeyError):
                     recognized_text = ""
-                
+               
                 if recognized_text and recognized_text != "exit":
                     print("Recognized text:", recognized_text)
 
-                    # Capture frame from RealSense camera
-                    frame = get_frame_from_realsense()
+                    # Capture frame from video stream
+                    frame = get_frame_from_video_stream("https://192.168.1.31:8000/video_feed")
                     if frame is not None:
-                        # Convert captured frame to jpeg image
                         image = save_image(frame)
+                        print(f"Image saved at {image}")
 
                         # Define the prompt
                         prompt = recognized_text
@@ -135,7 +127,7 @@ def main():
                             except (json.JSONDecodeError, UnicodeDecodeError) as e:
                                 print("Error:", e)
                     else:
-                        print("No frame captured from RealSense camera")
+                        print("No frame captured from video stream")
                 else:
                     print("No valid input. Waiting for commands...")
 
