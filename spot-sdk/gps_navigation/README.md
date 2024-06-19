@@ -30,7 +30,7 @@ This repository contains a Python script for controlling a Boston Dynamics Spot 
 
    ```python
    robot = sdk.create_robot(options.hostname)
-   robot.authenticate('admin', 'Cards@2023spot')
+   robot.authenticate('hostname', 'password')
    ```
 
 2. **Update the script with your MongoDB connection details:**
