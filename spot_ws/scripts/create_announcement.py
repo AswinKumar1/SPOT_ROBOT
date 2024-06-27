@@ -1,4 +1,4 @@
-from pymongo import MongoClient, UpdateOne
+from pymongo import MongoClient
 import playsound
 import os
 import threading
@@ -6,12 +6,14 @@ from gtts import gTTS
 import time
 
 # MongoDB connection configuration
-mongo_host = '192.168.1.64'  # Replace with your MongoDB host IP
-mongo_port = 27017  # Default MongoDB port
-mongo_db = 'robot_messaging'  # Replace with your MongoDB database name
-collection_name = 'robots'  # MongoDB collection name
+mongo_host = '192.168.1.14'  
+mongo_port = 27017  
+mongo_db = 'robot_messaging'  
+collection_name_1 = 'robots'  
+collection_name_2 = 'robot_announcement'
 
 def generate_and_play_audio(text):
+    print(text)  # Print the text to be announced
     output_file_path = 'output.mp3'
    
     try:
@@ -23,56 +25,50 @@ def generate_and_play_audio(text):
         play_thread.join()
     except KeyboardInterrupt:
         print("Process interrupted. Exiting.")
+    except Exception as e:
+        print(f"Error generating or playing audio: {e}")
     finally:
         if os.path.exists(output_file_path):
             os.remove(output_file_path)
 
-def check_sdk_and_play_announcement():
+def check_bunker_and_play_announcement():
+    client = None
     try:
-        # Connect to MongoDB
-        client = MongoClient(mongo_host, mongo_port)
+        client = MongoClient(mongo_host, mongo_port, serverSelectionTimeoutMS=5000)
         db = client[mongo_db]
-        collection = db[collection_name]
+        robots_collection = db[collection_name_1]
+        announcements_collection = db[collection_name_2]
 
-        # Query MongoDB for SDK column where robot_name is "spot_1"
-        query = {"robot_name": "spot_1"}
-        projection = {"sdk": 1, "announcement": 1, "_id": 0}  # Only retrieve sdk and announcement fields
-
-        robot = collection.find_one(query, projection)
+        query = {"robot_name": "husky", "bunker": "yes"}
+        robot = robots_collection.find_one(query)
 
         if robot:
-            sdk_enabled = robot.get("sdk", "no").lower()  # Default to "no" if sdk field is not present
-            announcement = robot.get("announcement", "")
+            announcement_query = {"robot_name": "husky", "flag": "yes"}
+            announcement_doc = announcements_collection.find_one(announcement_query)
 
-            if sdk_enabled == "yes":
+            if announcement_doc:
+                announcement = announcement_doc.get("announcement", "")
+                
                 if announcement:
-                    # Play the announcement 3 times
-                    for _ in range(3):
+                    for _ in range(10):
                         generate_and_play_audio(announcement)
                         time.sleep(1)
-
-                    # Update sdk flag to "no"
-                    update_query = {"robot_name": "spot_1"}
-                    update_operation = {"$set": {"sdk": "no"}}
-                    collection.update_one(update_query, update_operation)
-                   
                 else:
-                    print("No announcement found for 'spot_1'")
+                    print("No announcement found for 'husky'")
             else:
-                print("SDK not enabled for 'spot_1'")
-
+                print("No announcement document found for 'husky'")
         else:
-            print("Robot 'spot_1' not found in the database")
+            print("Bunker is not set to 'yes' for 'husky'")
 
     except Exception as e:
         print(f"Error accessing MongoDB: {e}")
 
     finally:
-        client.close()  # Close MongoDB connection
+        if client:
+            client.close()  # Close MongoDB connection
 
 if __name__ == "__main__":
     try:
-        check_sdk_and_play_announcement()
-
+        check_bunker_and_play_announcement()
     except Exception as e:
         print(f"Error: {e}")
