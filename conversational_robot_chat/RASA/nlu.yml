@@ -1,0 +1,46 @@
+version: "3.1"
+
+nlu:
+- intent: lease_spot
+  examples: |
+    - lease the robot
+    - take control of the robot
+    - get lease
+
+- intent: stand_spot
+  examples: |
+    - make the robot stand
+    - stand up
+    - robot stand
+
+- intent: sit_spot
+  examples: |
+    - make the robot sit
+    - sit down
+    - robot sit
+
+- intent: battery_spot
+  examples: |
+    - check battery
+    - battery status
+    - battery level
+
+- intent: move_spot
+  examples: |
+    - move forward by [2](distance) meters
+    - move backward by [1](distance) meter
+    - go forward [3](distance) meters
+    - move back by [1](distance) meter
+
+- intent: turn_spot
+  examples: |
+    - turn left
+    - turn right
+    - rotate to the left
+    - rotate to the right
+
+- intent: stop_spot
+  examples: |
+    - stop the robot
+    - halt
+    - cease movement
