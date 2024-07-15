@@ -1,0 +1,64 @@
+version: "3.1"
+
+stories:
+- story: lease spot
+  steps:
+    - intent: lease_spot
+    - action: action_lease_spot
+    - action: utter_lease_spot
+
+- story: stand spot
+  steps:
+    - intent: stand_spot
+    - action: action_stand_spot
+    - action: utter_stand_spot
+
+- story: sit spot
+  steps:
+    - intent: sit_spot
+    - action: action_sit_spot
+    - action: utter_sit_spot
+
+- story: battery spot
+  steps:
+    - intent: battery_spot
+    - action: action_battery_spot
+    - action: utter_battery_spot
+
+- story: move forward spot
+  steps:
+    - intent: move_spot
+      entities:
+        - distance: 2
+    - action: action_move_forward
+    - action: utter_move_spot
+
+- story: move backward spot
+  steps:
+    - intent: move_spot
+      entities:
+        - distance: 1
+    - action: action_move_backward
+    - action: utter_move_spot
+
+- story: turn left spot
+  steps:
+    - intent: turn_spot
+      entities:
+        - direction: left
+    - action: action_turn_left
+    - action: utter_turn_spot
+
+- story: turn right spot
+  steps:
+    - intent: turn_spot
+      entities:
+        - direction: right
+    - action: action_turn_right
+    - action: utter_turn_spot
+
+- story: stop spot
+  steps:
+    - intent: stop_spot
+    - action: action_stop_spot
+    - action: utter_stop_spot
