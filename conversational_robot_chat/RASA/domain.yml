@@ -1,0 +1,79 @@
+version: "3.1"
+
+intents:
+  - lease_spot
+  - stand_spot
+  - sit_spot
+  - battery_spot
+  - move_forward
+  - move_backward
+  - turn_left
+  - turn_right
+  - stop_spot
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - bot_challenge
+  - mood_great
+  - mood_unhappy
+
+entities:
+  - distance
+
+slots:
+  distance:
+    type: float
+    influence_conversation: false
+
+responses:
+  utter_lease_spot:
+    - text: "Black Robot lease control in place"
+  utter_stand_spot:
+    - text: "Making the robot stand."
+  utter_sit_spot:
+    - text: "Making the robot sit."
+  utter_battery_spot:
+    - text: "Checked the battery status."
+  utter_move_forward:
+    - text: "Moving the robot forward."
+  utter_move_backward:
+    - text: "Moving the robot backward."
+  utter_turn_left:
+    - text: "Turning the robot to the left."
+  utter_turn_right:
+    - text: "Turning the robot to the right."
+  utter_stop_spot:
+    - text: "Stopping the robot."
+  utter_greet:
+    - text: "Hello! How can I assist you today?"
+  utter_goodbye:
+    - text: "Goodbye! Have a great day!"
+  utter_affirm:
+    - text: "Got it!"
+  utter_deny:
+    - text: "Okay, no problem."
+  utter_bot_challenge:
+    - text: "I am a bot, here to assist you!"
+  utter_mood_great:
+    - text: "That's great to hear!"
+  utter_mood_unhappy:
+    - text: "I'm sorry to hear that."
+
+actions:
+  - action_lease_spot
+  - action_stand_spot
+  - action_sit_spot
+  - action_battery_spot
+  - action_move_forward
+  - action_move_backward
+  - action_turn_left
+  - action_turn_right
+  - action_stop_spot
+  - action_greet
+  - action_goodbye
+  - action_affirm
+  - action_deny
+  - action_bot_challenge
+  - action_mood_great
+  - action_mood_unhappy
