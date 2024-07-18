@@ -1,0 +1,126 @@
+!pip install torch torchvision transformers datasets faiss-cpu Pillow
+
+import os
+from PIL import Image
+from transformers import RagTokenizer, RagRetriever, RagTokenForGeneration
+from datasets import Dataset
+import torch
+from torchvision import transforms
+import faiss
+import numpy as np
+import json
+
+# Example dataset format
+dataset = [
+    {"image_path": "people_lying_down_6.png", "annotation": "Two people are lying down on the ground. Possibly Injured."},
+    # Add many more images and annotations. 
+]
+
+# Load and preprocess images
+def load_and_preprocess_image(image_path):
+    image = Image.open(image_path).convert("RGB")
+    preprocess = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+    ])
+    return preprocess(image).numpy()
+
+# Normalize a numpy array to unit length
+def normalize_L2(array):
+    norm = np.linalg.norm(array)
+    if norm == 0:
+        return array
+    return array / norm
+
+# Index images using FAISS
+def create_faiss_index(dataset):
+    dimension = 224 * 224 * 3  # Example dimension for resized images
+    index = faiss.IndexFlatL2(dimension)
+    for item in dataset:
+        image_array = load_and_preprocess_image(item["image_path"]).flatten()
+        normalized_image_array = normalize_L2(image_array)
+        index.add(np.expand_dims(normalized_image_array, axis=0))
+    return index
+
+index = create_faiss_index(dataset)
+
+faiss.write_index(index, "faiss_index.index")
+
+data_dict = {
+    "title": [""] * len(dataset),  # Placeholder titles
+    "text": [item["annotation"] for item in dataset],
+    "embeddings": [normalize_L2(load_and_preprocess_image(item["image_path"]).flatten()).tolist() for item in dataset]
+}
+
+# Save the dataset annotations to disk
+dataset_path = "./dataset"
+os.makedirs(dataset_path, exist_ok=True)
+
+with open(os.path.join(dataset_path, 'dataset.json'), 'w') as f:
+    json.dump(data_dict, f)
+
+from transformers import AutoProcessor, AutoModelForPreTraining
+
+processor = AutoProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf")
+model = AutoModelForPreTraining.from_pretrained("llava-hf/llava-1.5-7b-hf")
+
+from transformers import AutoTokenizer
+import torch
+
+# Initialize tokenizer
+tokenizer = AutoTokenizer.from_pretrained("llava-hf/llava-1.5-7b-hf")
+
+def preprocess_function(examples):
+    # Process the text annotations
+    texts = tokenizer(examples["annotation"], padding="max_length", truncation=True, max_length=128)
+    return {
+        'input_ids': texts['input_ids'],
+        'attention_mask': texts['attention_mask']
+    }
+
+# Preprocess text data
+train_dataset = train_dataset.map(preprocess_function, batched=True)
+val_dataset = val_dataset.map(preprocess_function, batched=True)
+
+from torch.utils.data import DataLoader
+
+train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=4)
+
+from transformers import TrainingArguments
+
+training_args = TrainingArguments(
+    output_dir="./results",
+    evaluation_strategy="epoch",
+    learning_rate=2e-5,
+    per_device_train_batch_size=4,
+    per_device_eval_batch_size=4,
+    num_train_epochs=3,
+    weight_decay=0.01,
+)
+
+from transformers import Trainer
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
+    tokenizer=tokenizer
+)
+
+# Train the model
+trainer.train()
+
+trainer.evaluate()
+
+model.save_pretrained("./llava_finetuned_model")
+tokenizer.save_pretrained("./llava_finetuned_model")
+
+def test_model(image_path):
+    image = load_and_preprocess_image(image_path)
+    inputs = tokenizer("Describe the situation in the image.", return_tensors="pt")
+    outputs = model.generate(inputs['input_ids'])
+    print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+
+test_model("/content/people_lying_down.png")
